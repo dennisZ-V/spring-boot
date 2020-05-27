@@ -2,7 +2,6 @@ server:
   port: 9090
 
 person:
-  lastName: dennis
   age: 18
   boss: false
   birth: 2019/12/12
@@ -12,4 +11,5 @@ person:
   dog:
     name: beibei
     age: 2
+  last-name: dennis
 
