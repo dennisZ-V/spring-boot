@@ -1,0 +1,15 @@
+server:
+  port: 9090
+
+person:
+  lastName: dennis
+  age: 18
+  boss: false
+  birth: 2019/12/12
+  maps: {k1: v1,k2: 12}
+  lists:
+    - vivian
+  dog:
+    name: beibei
+    age: 2
+
