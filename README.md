@@ -719,7 +719,9 @@ public class ThymeleafProperties {
 
   th：任意html属性：来替换原生属性的值
 
-四、SpringMVC的自动配置
+##### 四、SpringMVC的自动配置
+
+###### 1、SpringMVC auto-configuration
 
 https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-developing-web-applications
 
@@ -751,3 +753,120 @@ If you want to keep those Spring Boot MVC customizations and make more [MVC cust
 If you want to provide custom instances of `RequestMappingHandlerMapping`, `RequestMappingHandlerAdapter`, or `ExceptionHandlerExceptionResolver`, and still keep the Spring Boot MVC customizations, you can declare a bean of type `WebMvcRegistrations` and use it to provide custom instances of those components.
 
 If you want to take complete control of Spring MVC, you can add your own `@Configuration` annotated with `@EnableWebMvc`, or alternatively add your own `@Configuration`-annotated `DelegatingWebMvcConfiguration` as described in the Javadoc of `@EnableWebMvc`.
+
+
+
+###### 2、扩展SpringMVC
+
+**编写一个配置类（@Configuration），是WebMvcConfigurer类型，不能标注@EnableWebMvc**
+
+既保留了所有的自动配置，也能用我们扩展的配置
+
+```java
+@Configuration
+public class MyMvcConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        //浏览器发送/test请求也来到成功页面
+        registry.addViewController("/test").setViewName("success");
+    }
+}
+```
+
+原理：
+
+​	1）、WebMvcAutoConfiguration是SpringMVC的自动配置类
+
+​	2）、在做其他自动配置时会导入：@Import(EnableWebMvcConfiguration.class)
+
+```java
+@Configuration(proxyBeanMethods = false)
+	public static class EnableWebMvcConfiguration extends DelegatingWebMvcConfiguration implements ResourceLoaderAware {
+```
+
+```java
+//从容器中获取所有的WebMvcConfigurer
+@Autowired(required = false)
+	public void setConfigurers(List<WebMvcConfigurer> configurers) {
+		if (!CollectionUtils.isEmpty(configurers)) {
+			this.configurers.addWebMvcConfigurers(configurers);
+            //将所有的WebMvcConfigurer相关配置都来一起调用
+            //一个参考实现
+            @Override
+            public void addViewControllers(ViewControllerRegistry registry) {
+                for (WebMvcConfigurer delegate : this.delegates) {
+                    delegate.addViewControllers(registry);
+                }
+            }
+		}
+	}
+```
+
+​	3）、容器中所有的WebMvcConfigurer都会一起起作用
+
+​	4）、自定义配置类也会被调用
+
+效果：SpringMVC的自动配置和我们的扩展配置都会起作用
+
+###### 3、全面接管SpringMVC
+
+```java
+@Configuration
+@EnableWebMvc
+public class MyMvcConfig implements WebMvcConfigurer {
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        //浏览器发送/test请求也来到成功页面
+        registry.addViewController("/test").setViewName("success");
+    }
+}
+```
+
+SpringBoot对SpringMVC的自动配置不需要了，所有都自定义：所有的SpringMVC自动配置都失效了
+
+**需要在配置类中添加@EnableWebMvc即可**
+
+原理：
+
+为什么@EnableWebMvc自动配置失效了
+
+1）、@EnableWebMvc的核心
+
+```java
+@Import(DelegatingWebMvcConfiguration.class)
+public @interface EnableWebMvc {
+```
+
+2）、
+
+```java
+@Configuration(proxyBeanMethods = false)
+public class DelegatingWebMvcConfiguration extends WebMvcConfigurationSupport {
+```
+
+3）、
+
+```java
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnWebApplication(type = Type.SERVLET)
+@ConditionalOnClass({ Servlet.class, DispatcherServlet.class, WebMvcConfigurer.class })
+//判断容器中没有这个组件的时候，这个自动配置类才生效
+@ConditionalOnMissingBean(WebMvcConfigurationSupport.class)
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE + 10)
+@AutoConfigureAfter({ DispatcherServletAutoConfiguration.class, TaskExecutionAutoConfiguration.class,
+		ValidationAutoConfiguration.class })
+public class WebMvcAutoConfiguration {
+```
+
+4）、@EnableWebMvc将WebMvcConfigurationSupport导入进来了
+
+5）、WebMvcConfigurationSupport只是SpringMVC最基本的功能
+
+##### 五、如何修改SpringBoot的默认配置
+
+模式：
+
+​	1）、SpringBoot在自动配置很多组件的时候，先看容器中有没有用户自己配置的（@Bean、@Componet）如果有就用用户的的配置，如果没有，则自动配置，如果有些组件有多个，将用户配置的和默认的组合起来
+
+​	2）、在SpringBoot中会有非常多的xxxxConfigurer帮我们进行扩展配置
