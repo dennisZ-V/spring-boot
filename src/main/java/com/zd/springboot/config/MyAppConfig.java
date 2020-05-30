@@ -1,7 +1,5 @@
 package com.zd.springboot.config;
 
-import com.zd.springboot.service.HelloService;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -15,9 +13,9 @@ import org.springframework.context.annotation.Configuration;
 public class MyAppConfig {
 
     //将方法的返回值添加到容器中：容器中这个组件默认的id就是方法名
-    @Bean
-    public HelloService helloService(){
-        System.out.println("This config has been imported!");
-        return new HelloService();
-    }
+//    @Bean
+//    public HelloService helloService(){
+//        System.out.println("This config has been imported!");
+//        return new HelloService();
+//    }
 }

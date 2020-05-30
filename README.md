@@ -1,5 +1,5 @@
 # spring-boot
-#### Day 1
+### Day 1
 
 | 功能                       | @ConfigurationProperties | @Value   |
 | -------------------------- | ------------------------ | -------- |
@@ -25,11 +25,11 @@ public String sayHello(){
 
 
 
-#### DAY 2
+### DAY 2
 
-##### @PropertySource&@ImportResource
+#### 一、@PropertySource&@ImportResource
 
-**@PropertySource** : 加载指定的配置文件
+**@PropertySource** : 加载指定的配置文件（不支持yml格式的配置文件）
 
 ```java
 @Data
@@ -126,8 +126,628 @@ public class MyAppConfig {
 }
 ```
 
+#### 二、配置文件占位符
+
+##### 1）随机数
+
+```java
+${random.value}、${random.int}、${random.long}
+${random.int(10)}、${random.int[1024,65536]}
+```
+
+##### 2）占位符获取之前配置的值，如果没有可以使用：指定默认值
+
+#### 三、Profile
+
+**概念**：Profile是Spring对不同环境提供不同配置功能的支持，可以通过激活、指定参数等方式快速切换环境。
+
+##### 1）多Profile文件
+
+我们在主配置文件编写的时候，文件名可以是 application-(profile).properties
+
+默认使用application.properties的配置
+
+##### 2）yml支持多文档块方式
+
+```yml
+server:
+  port: 9090
+spring:
+  profiles:
+    active: prod
+---
+server:
+  port: 9091
+spring:
+  profiles: dev
+---
+server:
+  port: 9094
+spring:
+  profiles: prod
+```
 
 
 
+##### 3）激活指定Profile
+
+① 在配置文件中指定spring.profile.active=dev
+
+② 命令行：--spring.profiles.active=dev
+
+![image-20200529102422170](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20200529102422170.png)
+
+③ 虚拟机参数：-Dspring.profiles.active=dev
+
+![image-20200529102950086](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20200529102950086.png)
+
+### DAY 3
+
+#### 一、配置文件加载位置
+
+spring boot启动会扫描以下位置的application.properties或者application.yml文件作为Spring boot的默认配置文件
+
+-file:./config/
+
+-file:./
+
+-classpath:/config/
+
+-classpath:/
+
+-以上是按照<font color=red>**优先级从高到低**</font>的顺序，所有位置的文件都会被加载，**高优先级配置**内容会覆盖**低优先级配置**内容。
+
+-我们也可以通过配置spring.config.location来改变默认配置
+
+#### 二、外部配置加载顺序
+
+Spring Boot 支持多种外部配置方式
+
+这些方式优先级如下：
+
+https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-external-config
+
+### DAY4
+
+配置文件到低能写什么？怎么写？自动配置原理：
+
+[配置文件能配置的属性参照](https://docs.spring.io/spring-boot/docs/1.5.9.RELEASE/reference/htmlsingle/#common-application-properties)
 
 
+
+#### 一、自动配置原理：
+
+1）、SpringBoot启动的时候加载主配置类，开启了自动配置功能**@EnableAutoConfiguration**
+
+2）、**@EnableAutoConfiguration**作用：
+
+- 利用AutoConfigurationImportSelector给容器中导入一些组件
+
+- 可以查看selectImports()方法的内容
+
+- ```java
+  //获取候选的配置
+  List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
+  ```
+
+  - ```java
+    SpringFactoriesLoader.loadFactoryNames()
+    //扫描所有jar包类路径下的 META-INF/spring.factories
+    //把扫描到的这些文件的内容
+    //从properties中获取到EnableAutoConfiguration.class类（类名）对应的值，然后把它们添加在容器中
+    ```
+
+  **将类路径下 META-INF/spring.factories里面配置的所有EnableAutoConfiguration的值加入到了容器中**
+
+  ```properties
+  # Auto Configure
+  org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+  org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
+  org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,\
+  org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration,\
+  org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration,\
+  org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration,\
+  org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration,\
+  org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration,\
+  org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration,\
+  org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.couchbase.CouchbaseDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.couchbase.CouchbaseRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRestClientAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.ldap.LdapRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.mongo.MongoReactiveRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.solr.SolrRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.r2dbc.R2dbcDataAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.r2dbc.R2dbcRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.r2dbc.R2dbcTransactionManagerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration,\
+  org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration,\
+  org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration,\
+  org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,\
+  org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAutoConfiguration,\
+  org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration,\
+  org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration,\
+  org.springframework.boot.autoconfigure.hateoas.HypermediaAutoConfiguration,\
+  org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration,\
+  org.springframework.boot.autoconfigure.hazelcast.HazelcastJpaDependencyAutoConfiguration,\
+  org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration,\
+  org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration,\
+  org.springframework.boot.autoconfigure.influx.InfluxDbAutoConfiguration,\
+  org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration,\
+  org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jdbc.JndiDataSourceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jdbc.XADataSourceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jms.JndiConnectionFactoryAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jms.artemis.ArtemisAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jsonb.JsonbAutoConfiguration,\
+  org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration,\
+  org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration,\
+  org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapAutoConfiguration,\
+  org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration,\
+  org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration,\
+  org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,\
+  org.springframework.boot.autoconfigure.mail.MailSenderValidatorAutoConfiguration,\
+  org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration,\
+  org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,\
+  org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration,\
+  org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration,\
+  org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,\
+  org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration,\
+  org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration,\
+  org.springframework.boot.autoconfigure.rsocket.RSocketMessagingAutoConfiguration,\
+  org.springframework.boot.autoconfigure.rsocket.RSocketRequesterAutoConfiguration,\
+  org.springframework.boot.autoconfigure.rsocket.RSocketServerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.rsocket.RSocketStrategiesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.rsocket.RSocketSecurityAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.saml2.Saml2RelyingPartyAutoConfiguration,\
+  org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration,\
+  org.springframework.boot.autoconfigure.session.SessionAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.security.oauth2.resource.reactive.ReactiveOAuth2ResourceServerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration,\
+  org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration,\
+  org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration,\
+  org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration,\
+  org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration,\
+  org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration,\
+  org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.reactive.HttpHandlerAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.reactive.error.ErrorWebFluxAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration,\
+  org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration,\
+  org.springframework.boot.autoconfigure.websocket.reactive.WebSocketReactiveAutoConfiguration,\
+  org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration,\
+  org.springframework.boot.autoconfigure.websocket.servlet.WebSocketMessagingAutoConfiguration,\
+  org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration,\
+  org.springframework.boot.autoconfigure.webservices.client.WebServiceTemplateAutoConfiguration
+  ```
+
+  每一个这样的 xxxAutoConfiguration类都是容器的一个组件，都加入到容器中，用它们来自动配置。
+
+  3）、每一个自动配置类进行自动配置功能
+
+  4）、以**HttpEncodingAutoConfiguration**为例解释自动配置原理
+
+  ```java
+  //表示这是一个配置类，也可以给容器添加组件
+  @Configuration(proxyBeanMethods = false)
+  //启用指定类的ConfigurationProperties功能，将配置文件对用的值和HttpEncodingAutoConfiguration绑定起来
+  @EnableConfigurationProperties(ServerProperties.class)
+  //Spring底层@Conditional注解，根据不同的条件，如果满足指定的条件，整个配置类里面的配置就会生效（判断当前应用是否是web应用，如果是，当前配置类生效）
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+  //判断当前项目有没有这个类CharacterEncodingFilter：SpringMVC中进行乱码解决的过滤器
+  @ConditionalOnClass(CharacterEncodingFilter.class)
+  //判断配置文件中是否存在某个配置 server.servlet.encoding.enabled 
+  //matchIfMissing如果不存在判断也是成立的，即使配置文件中不配置enabled属性，也是默认生效的
+  @ConditionalOnProperty(prefix = "server.servlet.encoding", value = "enabled", matchIfMissing = true)
+  public class HttpEncodingAutoConfiguration {
+      
+      //已经和SpringBoot的配置文件映射了
+      private final Encoding properties;
+      
+      //只有一个有参构造器的情况下，参数的值就会从容器中拿
+      public HttpEncodingAutoConfiguration(ServerProperties properties) {
+  		this.properties = properties.getServlet().getEncoding();
+  	}
+      
+      //给容器中添加一个组件，这个组件的某些值需要从properties中获取
+      @Bean
+  	@ConditionalOnMissingBean
+  	public CharacterEncodingFilter characterEncodingFilter() {
+  		CharacterEncodingFilter filter = new OrderedCharacterEncodingFilter();
+  		filter.setEncoding(this.properties.getCharset().name());
+  		filter.setForceRequestEncoding(this.properties.shouldForce(Encoding.Type.REQUEST));
+  		filter.setForceResponseEncoding(this.properties.shouldForce(Encoding.Type.RESPONSE));
+  		return filter;
+  	}
+  ```
+
+  根据当前不同的条件判断，决定这个配置类是否生效
+
+  一旦这个配置类生效：这个配置类就会给容器中添加各种组件，这些组件的属性是从对应的properties类中获取，这些类里面的每一个属性又是和配置文件绑定
+
+  
+
+  5）、所有在配置文件中的配置的属性都是在xxxProperties类中封装，配置文件能配置什么就可以参照某一个功能对应的这个属性类
+
+  ```java
+  @ConfigurationProperties(prefix = "server", ignoreUnknownFields = true)//从配置文件中获取指定的值和bean
+  public class ServerProperties {
+  ```
+
+  
+
+**精髓**
+
+​	**1）、SpringBoot启动会加载大量的自动配置类**
+
+​	**2）、我们看我们需要的功能有没有SpringBoot默认写好的自动配置类**
+
+​	**3）、我们再看这个自动配置类中到低配置了哪些组件（只要我们要用的组件有，我们就不需要再来配置）**
+
+​	**4）、给容器中自动配置类添加组建的时候，会从properties类中获取某些属性，我们就可以在配置文件中指定这些属性的值**
+
+xxxxxxAutoConfiguration： 自动配置类
+
+给容器中添加组件
+
+xxxxxxProperties：封装配置文件中相关属性
+
+
+
+#### 二、细节
+
+##### @Conditional派生注解（Spring注解版原生的@Conditional作用）
+
+作用：必须是@Conditional指定的条件成立，才给容器中添加组件，配置类里面的所有内容才生效
+
+| @Conditional扩展直接            | 作用（判断是否满足当前指定条件）                 |
+| ------------------------------- | ------------------------------------------------ |
+| @ConditionalOnJava              | 系统的java版本是否符合要求                       |
+| @ConditionalOnBean              | 容器中存在指定Bean                               |
+| @ConditionalOnMissingBean       | 容器中不存在指定Bean                             |
+| @ConditionalOnExpression        | 满足SpEL表达式指定                               |
+| @ConditionalOnClass             | 系统中有指定的类                                 |
+| @ConditionalOnMissingClass      | 系统中没有指定的类                               |
+| @ConditionalOnSingleCandidate   | 容器中只有一个指定的Bean，或者这个Bean是首选Bean |
+| @ConditionalOnProperty          | 系统中指定的属性是否有指定的值                   |
+| @ConditionalOnResource          | 类路径下是否存在指定资源文件                     |
+| @ConditionalOnWebApplication    | 当前是web环境                                    |
+| @ConditionalOnNotWebApplication | 当前不是web环境                                  |
+| @ConditionalOnJndi              | JNDI存在指定项                                   |
+
+自动配置类必须在一定的条件下才能生效
+
+我们可以通过启用 debug=true属性，来让控制台打印自动配置报告，这样就可以很方便的知道哪些自动配置类生效
+
+#### 三、日志
+
+##### 日志框架
+
+| 日志门面（日志的抽象层）                                     | 日志实现                                           |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| ~~JCL(Jakarta Commons Loggin)~~        SLF4J(Simple Logging Facade for Java)     ~~Jboss-logging~~ | ~~Log4J~~   JUL(java.util.loggin)  Log4j2  Logback |
+
+左边选一个门面（抽象层）、右边来选一个实现：
+
+日志门面：SLF4J
+
+日志实现：Logback
+
+
+
+SpringBoot：底层是Spring框架，Spring框架默认使用JCL
+
+​	**SpringBoot选用SLF4J和Logback**
+
+##### SLF4J使用
+
+###### 1）、如何在系统中使用SLF4J
+
+以后开发的时候，日志记录方法的调用，不应该来直接调用日志的实现类，而是调用日志抽象层里的方法
+
+给系统里面导入slf4j的jar和logback的实现jar
+
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class HelloWorld {
+  public static void main(String[] args) {
+    Logger logger = LoggerFactory.getLogger(HelloWorld.class);
+    logger.info("Hello World");
+  }
+}
+```
+
+![image-20200530144626599](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20200530144626599.png)
+
+每一个日志的实现框架都有自己的配置文件，配置文件使用SLF4J以后，配置文件还是做成日志实现框架的配置文件
+
+##### SpringBoot日志关系
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+    <version>2.3.0.RELEASE</version>
+    <scope>compile</scope>
+</dependency>
+```
+
+SpringBoot使用它来做日志功能
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-logging</artifactId>
+    <version>2.3.0.RELEASE</version>
+    <scope>compile</scope>
+</dependency>
+```
+
+底层依赖关系
+
+![image-20200530150132346](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20200530150132346.png)
+
+总计：
+
+​	1）、SpringBoot底层也是使用SLF4J+Logback的方式进行日志记录
+
+​	2）、SpringBoot也把其他的日志都替换成了SLF4J
+
+​	3）、中间替换包
+
+#### 四、日志使用
+
+##### 	默认配置
+
+​	SpringBoot默认帮我们配置好了日志：
+
+```java
+Logger logger = LoggerFactory.getLogger(getClass());
+
+@Test
+void contextLoads() {
+    //日志的级别
+    //由高到低
+    //可以调整日志的级别，日志就只会在这个级别以后的高级别生效
+    //传参是Supplier<String>类型，使用Lambda表达式声明
+    logger.trace(() -> "这是一个trace");
+    logger.debug(() -> "这是一个debug");
+    logger.info(() -> "这是一个info");
+    logger.warn(() -> "这是一个warn");
+    logger.error(() -> "这是一个error");
+}
+```
+
+```yml
+logging.level:
+  com.zd.springboot: trace
+```
+
+#### 五、Web开发
+
+##### 一、简介
+
+使用SpringBoot：
+
+**1）、创建SpringBoot应用，选中我们需要的模块**
+
+**2）、SpringBoot已经默认将这些场景配置好了，只需要在配置文件中指定少量配置就可运行起来**
+
+**3）、自己编写业务代码**
+
+
+
+**自动配置原理**
+
+这个创景SpringBoot帮我们配置了什么？能不能修改？能修改哪些配置？能不能扩展？
+
+```java
+xxxAutoConfiguration：帮我们给容器中自动配置组件
+xxxProperties：配置类来封住配置文件的内容
+```
+
+
+
+##### 二、SpringBoot对静态资源的映射规则
+
+```java
+@Override
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+	if (!this.resourceProperties.isAddMappings()) {
+		logger.debug("Default resource handling disabled");
+		return;
+	}
+	Duration cachePeriod = this.resourceProperties.getCache().getPeriod();
+	CacheControl cacheControl = this.resourceProperties.getCache().getCachecontrol().toHttpCacheControl();
+	if (!registry.hasMappingForPattern("/webjars/**")) {
+		customizeResourceHandlerRegistration(registry.addResourceHandler("/webjars/**")
+				.addResourceLocations("classpath:/META-INF/resources/webjars/")
+				.setCachePeriod(getSeconds(cachePeriod)).setCacheControl(cacheControl));
+	}
+	String staticPathPattern = this.mvcProperties.getStaticPathPattern();
+	if (!registry.hasMappingForPattern(staticPathPattern)) {
+		customizeResourceHandlerRegistration(registry.addResourceHandler(staticPathPattern)
+				.addResourceLocations(getResourceLocations(this.resourceProperties.getStaticLocations()))
+				.setCachePeriod(getSeconds(cachePeriod)).setCacheControl(cacheControl));
+	}
+}
+```
+
+1、所有/webjars/**，都去classpath:/META-INF/resources/webjars/找资源
+
+​	[webjars](https://www.webjars.org/)：以jar包的方式引入静态资源
+
+```xml
+<!--引入jquery-webjar-->在访问的时候只需要写webjars下面资源的名称即可
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>jquery</artifactId>
+    <version>3.5.1</version>
+</dependency>
+```
+
+2、"/**"访问当前项目的任何资源（静态资源的文件夹）
+
+```java
+"classpath:/META-INF/resources/"
+"classpath:/resources/"
+"classpath:/static/" 
+"classpath:/public/"
+"/":当前项目的根路径
+```
+
+localhost:8080/abc====去静态资源文件夹里面找abc
+
+3、欢迎页：静态资源文件夹下的所有index.html页面，被"/**"映射
+
+localhost:8080/	找index页面
+
+##### 三、模板引擎
+
+Jsp, Velocity, Freemarker, Thymeleaf
+
+SpringBoot推荐使用Thymeleaf
+
+语法更简单，功能更强大
+
+###### 1、引入Thymeleaf
+
+```xml
+<dependency>
+	<groupId>org.thymeleaf</groupId>
+	<artifactId>thymeleaf</artifactId>
+</dependency>
+切换thymeleaf版本
+<thymeleaf.version>x.x.x</thymeleaf.version>
+<thymeleaf-layout-dialect.version>x.x.x</thymeleaf-layout-dialect.version>
+```
+
+###### 2、Thymeleaf使用&语法
+
+```java
+@ConfigurationProperties(prefix = "spring.thymeleaf")
+public class ThymeleafProperties {
+
+	private static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
+
+	public static final String DEFAULT_PREFIX = "classpath:/templates/";
+
+	public static final String DEFAULT_SUFFIX = ".html";
+    //只要把html页面放在classpath:/templates/ thymeleaf就能自动渲染
+```
+
+使用：
+
+1）、导入Thymeleaf的名称空间
+
+```html
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+```
+
+2）、使用Thymeleaf语法
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>成功</h1>
+<!--th:text 将div里面的文本内容设置为-->
+    <div th:text="${hello}">这是显示欢迎信息</div>
+</body>
+</html>
+```
+
+3）、语法规则
+
+- ​	th:text：改变当前元素里面的文本内容
+
+  th：任意html属性：来替换原生属性的值
+
+四、SpringMVC的自动配置
+
+https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-developing-web-applications
+
+Spring Boot provides auto-configuration for Spring MVC that works well with most applications.
+
+The auto-configuration adds the following features on top of Spring’s defaults:
+
+- Inclusion of `ContentNegotiatingViewResolver` and `BeanNameViewResolver` beans.
+  - ContentNegotiatingViewResolver：组合所有的视图解析器
+  - 如何定制：我们可以自己给容器中添加一个视图解析器，自动将其组合进来
+- Support for serving static resources, including support for WebJars (covered [later in this document](https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-spring-mvc-static-content))).
+- Automatic registration of `Converter`, `GenericConverter`, and `Formatter` beans.
+  - `Converter`：转换器 	public String hello(User user);	类型转换使用
+  - `Formatter`：格式化器   2020-05-30===Date
+- Support for `HttpMessageConverters` (covered [later in this document](https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-spring-mvc-message-converters)).
+  - `HttpMessageConverters` ：SpringMVC用来转换Http请求和响应，对象----->json
+  - `HttpMessageConverters` 是从容器中确定，获取所有的HttpMessageConverters
+  - 自己给容器中添加HttpMessageConverters，只需要将组件注册在容器中
+- Automatic registration of `MessageCodesResolver` (covered [later in this document](https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-spring-message-codes)).   定义错误代码生成规则
+- Static `index.html` support.    静态首页访问
+- Custom `Favicon` support (covered [later in this document](https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-spring-mvc-favicon)). 
+- Automatic use of a `ConfigurableWebBindingInitializer` bean (covered [later in this document](https://docs.spring.io/spring-boot/docs/2.3.0.RELEASE/reference/htmlsingle/#boot-features-spring-mvc-web-binding-initializer)).
+  - 我们可以配置一个ConfigurableWebBindingInitializer来替换默认的（添加到容器中）
+  - 初始化WebDataBinder
+  - 请求数据=====javaBean
+
+If you want to keep those Spring Boot MVC customizations and make more [MVC customizations](https://docs.spring.io/spring/docs/5.2.6.RELEASE/spring-framework-reference/web.html#mvc) (interceptors, formatters, view controllers, and other features), you can add your own `@Configuration` class of type `WebMvcConfigurer` but **without** `@EnableWebMvc`.
+
+If you want to provide custom instances of `RequestMappingHandlerMapping`, `RequestMappingHandlerAdapter`, or `ExceptionHandlerExceptionResolver`, and still keep the Spring Boot MVC customizations, you can declare a bean of type `WebMvcRegistrations` and use it to provide custom instances of those components.
+
+If you want to take complete control of Spring MVC, you can add your own `@Configuration` annotated with `@EnableWebMvc`, or alternatively add your own `@Configuration`-annotated `DelegatingWebMvcConfiguration` as described in the Javadoc of `@EnableWebMvc`.
