@@ -870,3 +870,102 @@ public class WebMvcAutoConfiguration {
 ​	1）、SpringBoot在自动配置很多组件的时候，先看容器中有没有用户自己配置的（@Bean、@Componet）如果有就用用户的的配置，如果没有，则自动配置，如果有些组件有多个，将用户配置的和默认的组合起来
 
 ​	2）、在SpringBoot中会有非常多的xxxxConfigurer帮我们进行扩展配置
+### DAY 5
+
+#### 一、安装linux虚拟机
+
+1、VMWare，VirtualBox
+
+2、新建虚拟机
+
+3、双击运行虚拟机，使用root/123456
+
+4、使用xshell等SSH工具连接
+
+5、设置虚拟机网络
+
+6、设置好网络之后使用命令重启虚拟机网络
+
+```shell
+#centOS命令
+service network restart
+```
+
+7、查看linux的ip地址
+
+```shell
+ip addr
+```
+
+#### 二、在linux虚拟机上安装docker
+
+步骤：
+
+- 检查内核版本，必须是3.10及以上	
+  - uname -r
+- 安装docker
+  - yum install docker
+- 输入y确认安装
+- 启动docker
+  - [root@bogon ~]# systemctl start docker
+    [root@bogon ~]# docker -v
+    Docker version 1.13.1, build 64e9980/1.13.1
+- 开机启动docker
+  - [root@bogon ~]# systemctl enable docker
+    Created symlink from /etc/systemd/system/multi-user.target.wants/docker.service to /usr/lib/systemd/system/docker.service.
+- 停止docker
+  - [root@bogon ~]# systemctl stop docker
+
+#### 三、镜像操作
+
+| 操作 | 命令                                             | 说明                                                   |
+| ---- | ------------------------------------------------ | ------------------------------------------------------ |
+| 检索 | docker search 关键字<br/>eg：docker search redis | 在docker hub上检索镜像的详细信息                       |
+| 拉取 | docker pull 镜像名:tag                           | tag是可选的，tag表示标签，多为软件版本号，默认是latest |
+| 列表 | docker images                                    | 查看所有本地镜像                                       |
+| 删除 | docker rmi image-id                              | 删除指定的本地镜像                                     |
+
+#### 四、容器操作
+
+软件镜像（qq安装程序）----运行镜像------产生一个容器（正在运行的软件）
+
+```shell
+#1、搜索镜像
+docker search tomcat
+#2、拉取镜像
+docker pull tomcat
+#3、根据镜像启动容器
+docker run --name mytomcat -d tomcat
+#4、查看运行中的容器
+docker ps
+#5、停止运行中的容器
+docker stop CONTAINER ID/mytomcat
+#6、查看所有的容器
+docker ps -a
+#7、启动容器
+docker start CONTAINER ID
+#8、删除容器
+docker rm CONTAINER ID
+#9、启动一个做了端口映射的tomcat
+docker run --name mytomcat -d -p 8080:8080 tomcat
+-d:后台运行
+-p:将主机端口映射到容器的一个端口  主机端口:容器内部的端口
+#10、配置端口号
+firewall-cmd --zone=public --add-port=5672/tcp --permanent   # 开放5672端口
+firewall-cmd --zone=public --remove-port=5672/tcp --permanent  #关闭5672端口
+firewall-cmd --reload   # 配置立即生效
+firewall-cmd --zone=public --list-ports	#查看防火墙所有开放的端口
+systemctl stop firewalld.service	#关闭防火墙
+firewall-cmd --state	#查看防火墙状态
+#11、进入容器
+docker exec -it CONTAINER ID /bin/bash
+#12、查看容器日志
+docker logs CONTAINER ID
+```
+
+mysql启动需设置密码
+
+```shell
+docker run -p 3306:3306 --name mysql -e MYSQL_ROOT_PASSWORD=123456 -d mysql
+```
+
