@@ -1300,5 +1300,33 @@ void testRedis() {
 - 默认创建的RedisCacheManager操作redis的时候使用的是RedisTemplate<Object, Object>
 - RedisTemplate<Object, Object>是默认使用jdk序列化机制
 
+#### 六、JMS&AMQP
 
+**JMS（Java Message Service）JAVA消息服务**
 
+——基于JVM消息代理的规范。ActiveMQ、HornetMQ是JMS实现
+
+**AMQP（Advanced Message Queuing Protocol）**
+
+——高级消息队列协议，也是一个消息代理的规范，兼容JMS
+
+——RabbitMQ是AMQP的实现
+
+##### 1、整合RabbitMQ
+
+步骤：
+
+1. ​	引入依赖
+
+   ```xml
+   <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-amqp</artifactId>
+   </dependency>
+   ```
+
+   - RabbitAutoConfiguration
+   - 自动配置了连接工厂CachingConnectionFactory
+   - RabbitProperties封装了 RabbitMQ的配置
+   - RabbitTemplate：给RabbitMQ发送和接收消息
+   - AmqpAdmin：RabbitMQ系统管理功能组件

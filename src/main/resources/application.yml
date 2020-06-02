@@ -1,6 +1,40 @@
 server:
   port: 9090
 spring:
+  profiles:
+    active: dev
+---
+server:
+  port: 9091
+spring:
+  profiles: dev
+  datasource:
+    url: jdbc:mysql://192.168.0.6:3306/mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+  jpa:
+    hibernate:
+      ddl-auto: update  #更新/创建数据表
+    show-sql: true  #控制台打印sql
+  redis:
+    host: 192.168.0.6
+  rabbitmq:
+    host: 192.168.0.6
+    username: guest
+    password: guest
+#    port: 5672
+logging.level:
+  com.zd: debug
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:mybatis.mapper/*.xml
+---
+server:
+  port: 9094
+spring:
+  profiles: prod
   datasource:
     url: jdbc:mysql://192.168.0.130:3306/spring_boot
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,13 +53,3 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
   mapper-locations: classpath:mybatis.mapper/*.xml
----
-server:
-  port: 9091
-spring:
-  profiles: dev
----
-server:
-  port: 9094
-spring:
-  profiles: prod

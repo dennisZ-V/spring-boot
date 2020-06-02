@@ -23,6 +23,7 @@ import java.time.Duration;
 public class RedisConfiguration {
 
     private Duration timeToLive = Duration.ZERO;
+
     public void setTimeToLive(Duration timeToLive) {
         this.timeToLive = timeToLive;
     }
@@ -37,22 +38,22 @@ public class RedisConfiguration {
         return template;
     }
 
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory factory) {
-        RedisSerializer<String> redisSerializer = new StringRedisSerializer();
-        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
-
-        //解决查询缓存转换异常的问题
-        ObjectMapper om = new ObjectMapper();
-        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        jackson2JsonRedisSerializer.setObjectMapper(om);
-
-        // 配置序列化（解决乱码的问题）
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
-                .disableCachingNullValues();
-
-        return  RedisCacheManager.builder(factory).cacheDefaults(config).build();
-    }
+//    @Bean
+//    public CacheManager cacheManager(RedisConnectionFactory factory) {
+//        RedisSerializer<String> redisSerializer = new StringRedisSerializer();
+//        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+//
+//        //解决查询缓存转换异常的问题
+//        ObjectMapper om = new ObjectMapper();
+//        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+//        jackson2JsonRedisSerializer.setObjectMapper(om);
+//
+//        // 配置序列化（解决乱码的问题）
+//        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+//                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer))
+//                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
+//                .disableCachingNullValues();
+//
+//        return  RedisCacheManager.builder(factory).cacheDefaults(config).build();
+//    }
 }
