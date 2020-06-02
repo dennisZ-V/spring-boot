@@ -968,4 +968,177 @@ mysql启动需设置密码
 ```shell
 docker run -p 3306:3306 --name mysql -e MYSQL_ROOT_PASSWORD=123456 -d mysql
 ```
+### DAY 6
+
+#### 一、JDBC
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+</dependency>
+```
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://192.168.0.130:3306/dennis_jdbc
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: 123456
+```
+
+效果：
+
+​	默认使用class com.zaxxer.hikari.HikariDataSource作为数据源
+
+​	数据源的相关配置都在DataSourceProperties中
+
+自动配置原理：
+
+org.springframework.boot.autoconfigure.jdbc
+
+1、参考DataSourceConfiguration，根据配置创建数据源，默认使用Hikari；可以使用spring.datasource.type指定自定义的数据源类型
+
+2、SpringBoot默认支持：
+
+```java
+org.apache.tomcat.jdbc.pool.DataSource
+com.zaxxer.hikari.HikariDataSource
+org.apache.commons.dbcp2.BasicDataSource
+```
+
+3、自定义数据源类型
+
+```java
+/**
+ * Generic DataSource configuration.
+ */
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnMissingBean(DataSource.class)
+@ConditionalOnProperty(name = "spring.datasource.type")
+static class Generic {
+	@Bean
+	DataSource dataSource(DataSourceProperties properties) {
+        //使用DataSourceBuilder创建数据源，利用反射创建响应type的数据源，并且绑定相关属性
+		return properties.initializeDataSourceBuilder().build();
+	}
+}
+```
+
+4、DataSourceInitializerInvoker实现了ApplicationListener
+
+​	作用：
+
+1. ```java
+   private void initialize(DataSourceInitializer initializer) {
+   	try {
+   		this.applicationContext.publishEvent(new DataSourceSchemaCreatedEvent(initializer.getDataSource()));
+   		// The listener might not be registered yet, so don't rely on it.
+   		if (!this.initialized) {
+   			this.dataSourceInitializer.initSchema();
+   			this.initialized = true;
+   		}
+   	}
+   	catch (IllegalStateException ex) {
+   		logger.warn(LogMessage.format("Could not send event to complete DataSource initialization (%s)",
+   				ex.getMessage()));
+   	}
+   }
+   /**
+    * Initialize the schema if necessary.
+    * @see DataSourceProperties#getData()
+    */
+   void initSchema() {
+   	List<Resource> scripts = getScripts("spring.datasource.data", this.properties.getData(), "data");
+   	if (!scripts.isEmpty()) {
+   		if (!isEnabled()) {
+   			logger.debug("Initialization disabled (not running data scripts)");
+   			return;
+   		}
+   		String username = this.properties.getDataUsername();
+   		String password = this.properties.getDataPassword();
+   		runScripts(scripts, username, password);
+   	}
+   }
+   ```
+
+   运行建表语句
+
+2. ```java
+   @Override
+   public void onApplicationEvent(DataSourceSchemaCreatedEvent event) {
+   	// NOTE the event can happen more than once and
+   	// the event datasource is not used here
+   	DataSourceInitializer initializer = getDataSourceInitializer();
+   	if (!this.initialized && initializer != null) {
+   		initializer.initSchema();
+   		this.initialized = true;
+   	}
+   }
+   ```
+
+   运行插入数据的语句
+
+默认只需要讲文件命名为：
+
+```properties
+schema-*.sql, data-*.sql
+```
+
+```yaml
+initialization-mode: always
+#可以使用下面的属性来指定位置
+schema:
+	- classpath:department.sql
+```
+
+5、操作数据：自动配置了JdbcTemplateAutoConfiguration操作数据库
+
+#### 二、整合MyBatis
+
+```xml
+ <dependency>
+     <groupId>org.mybatis.spring.boot</groupId>
+     <artifactId>mybatis-spring-boot-starter</artifactId>
+     <version>2.1.2</version>
+ </dependency>
+```
+
+##### 1、注解版：
+
+```java
+@Mapper
+public interface DepartmentMapper {
+
+    @Select("select * from department where id = #{id}")
+    Department getDeptById(Long id);
+
+    @Delete("delete from department where id = #{id}")
+    Boolean deleteDeptById(Long id);
+
+    @Insert("insert into department (department_name) values (#{departmentName})")
+    boolean insertDept(Department department);
+
+    @Update("update department set department_name=#{departmentName} where id = #{id}")
+    boolean updateDept(Department department);
+}
+```
+
+```yaml
+#开启驼峰命名规则
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+```
+
+```java
+//使用@MapperScan批量扫描所有的mapper接口
+@MapperScan(value = "com.dennis.springboot.mapper")
+```
+
 

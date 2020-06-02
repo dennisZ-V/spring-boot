@@ -7,7 +7,7 @@ import lombok.Data;
  * @date
  */
 @Data
-public class Dog {
-    private String name;
-    private Integer age;
+public class Department {
+    private Long id;
+    private String departmentName;
 }
