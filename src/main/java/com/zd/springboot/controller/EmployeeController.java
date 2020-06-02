@@ -1,12 +1,9 @@
 package com.zd.springboot.controller;
 
 import com.zd.springboot.entity.Employee;
-import com.zd.springboot.mapper.EmployeeMapper;
+import com.zd.springboot.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.Callable;
 
@@ -19,15 +16,25 @@ import java.util.concurrent.Callable;
 public class EmployeeController {
 
     @Autowired
-    EmployeeMapper employeeMapper;
+    EmployeeService employeeService;
 
     @GetMapping("getById")
     public Callable getById(Long id) {
-        return () -> employeeMapper.getEmpById(id);
+        return () -> employeeService.getEmpById(id);
     }
 
     @PostMapping("save")
     public Callable save(Employee employee) {
-        return () -> employeeMapper.insertEmp(employee);
+        return () -> employeeService.insertEmp(employee);
+    }
+
+    @PutMapping("update")
+    public Callable update(Employee employee){
+        return () -> employeeService.updateEmp(employee);
+    }
+
+    @DeleteMapping("delete")
+    public Callable delete(Long id){
+        return ()-> employeeService.deleteEmpById(id);
     }
 }

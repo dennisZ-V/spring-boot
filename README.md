@@ -1002,9 +1002,9 @@ spring:
 
 org.springframework.boot.autoconfigure.jdbc
 
-1、参考DataSourceConfiguration，根据配置创建数据源，默认使用Hikari；可以使用spring.datasource.type指定自定义的数据源类型
+##### 1、参考DataSourceConfiguration，根据配置创建数据源，默认使用Hikari；可以使用spring.datasource.type指定自定义的数据源类型
 
-2、SpringBoot默认支持：
+##### 2、SpringBoot默认支持：
 
 ```java
 org.apache.tomcat.jdbc.pool.DataSource
@@ -1012,7 +1012,7 @@ com.zaxxer.hikari.HikariDataSource
 org.apache.commons.dbcp2.BasicDataSource
 ```
 
-3、自定义数据源类型
+##### 3、自定义数据源类型
 
 ```java
 /**
@@ -1030,7 +1030,7 @@ static class Generic {
 }
 ```
 
-4、DataSourceInitializerInvoker实现了ApplicationListener
+##### 4、DataSourceInitializerInvoker实现了ApplicationListener
 
 ​	作用：
 
@@ -1097,7 +1097,7 @@ schema:
 	- classpath:department.sql
 ```
 
-5、操作数据：自动配置了JdbcTemplateAutoConfiguration操作数据库
+##### 5、操作数据：自动配置了JdbcTemplateAutoConfiguration操作数据库
 
 #### 二、整合MyBatis
 
@@ -1130,15 +1130,175 @@ public interface DepartmentMapper {
 ```
 
 ```yaml
-#开启驼峰命名规则
 mybatis:
   configuration:
-    map-underscore-to-camel-case: true
+    map-underscore-to-camel-case: true	#开启驼峰命名规则
+  mapper-locations: classpath:mybatis.mapper/*.xml	#指定sql映射文件的位置
 ```
 
 ```java
 //使用@MapperScan批量扫描所有的mapper接口
 @MapperScan(value = "com.dennis.springboot.mapper")
 ```
+
+#### 三、整合JPA
+
+##### 1、整合SpringData JPA
+
+JPA:ORM(Object Relational Mapping)
+
+1. 编写一个实体类（bean）来和数据表进行映射，并且配置好映射关系
+
+   ```java
+   @Entity
+   @Data
+   @Table(name = "tbl_user")
+   public class User {
+   
+       @Id
+       @GeneratedValue(strategy = GenerationType.IDENTITY)
+       private Long id;
+   
+       @Column(name = "last_name")
+       private String lastName;
+   
+       @Column
+       private String email;
+   }
+   ```
+
+2. 编写Dao接口来操作实体类对应的数据表（Repository）
+
+   ```java
+   public interface UserRepository extends JpaRepository<User,Long> {
+   }
+   ```
+
+3. 基本的配置
+
+   ```yaml
+   spring:
+       jpa:
+           hibernate:
+             ddl-auto: update  #更新/创建数据表
+           show-sql: true  #控制台打印sql
+   ```
+
+#### 四、Spring缓存抽象
+
+##### 1、概念&缓存注释
+
+| Cache          | 缓存接口，定义缓存操作，实现有：Redis、EhCache、ConcurrentMapCache等 |
+| -------------- | ------------------------------------------------------------ |
+| CacheManager   | 缓存管理器，管理各种缓存组件                                 |
+| @Cacheable     | 主要针对方法配置，能够根据方法的请求参数对其结果进行缓存     |
+| @CacheEvict    | 清空缓存                                                     |
+| @CachePut      | 保证方法被调用，又希望结果被缓存                             |
+| @EnableCaching | 开启基于注解的缓存                                           |
+| KeyGenerator   | 缓存数据时Key生成策略                                        |
+| serialize      | 缓存数据时value序列化策略                                    |
+
+##### 2、快速体验
+
+1. 开启基于注解的缓存
+
+2. 标注缓存注解：
+
+   - **@Cacheable**：将方法的运行结果进行缓存，以后再要相同的数据时，对缓存的真正CRUD操作再cache组件中，每一个缓存组件有自己的名字
+
+     1）、cacheNames/value：指定缓存组件的名字
+
+     2）、key：缓存数据使用的Key，可以用它来指定，默认使用方法参数的值。
+
+     ​					编写SpEL：#id;参数id的值	#a0	#p0	#root.args[0]
+
+     3）、keyGenerator：key的生成器，可以自定义。跟key属性二选一使用
+
+     4）、cacheManager/cacheResolver：指定缓存管理器；cacheResolver指定缓存解析器（二选一）
+
+     5）、condition：指定符合条件的情况下才缓存
+
+     6）、unless：否定缓存，当unless指定的条件为true，方法的返回值就不会被缓存，可以获取到结果进行判断
+
+     7）、sync：是否使用异步模式
+
+   - **@CachePut**：既调用方法，又更新缓存，修改数据之后，同时更新缓存。
+
+     运行时机：
+
+     1）、先调用目标方法
+
+     2）、将目标方法的结果缓存起来
+
+     ```java
+     @CachePut(value = "emp", key = "#result.id")
+     @Override
+     public Employee updateEmp(Employee employee) {
+         employeeMapper.updateEmp(employee);
+         return employee;
+     }
+     ```
+
+   - @CacheEvict：删除缓存
+
+     1）、allEntries = true：指定清除这个缓存中的所有数据
+
+     2）、beforeInvocation = false：删除缓存是否在方法之后执行，默认代表是在方法执行之后执行，如果出现异常，缓存就不会清除
+
+   - @Caching：定义复杂的缓存注解
+
+   - @CacheConfig：抽取缓存的公共配置
+
+#### 五、整合redis
+
+##### 1、步骤：
+
+1、安装redis，使用docker
+
+2、引入redis的starter
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+```
+
+3、配置redis
+
+```yaml
+spring:
+	redis:
+  		host: 192.168.0.130
+```
+
+使用StringRedisTemplate/RedisTemplate操作缓存
+
+```java
+@Test
+void testRedis() {
+    Employee employee = employeeMapper.getEmpById((long) 2);
+    //默认如果保存对象，使用jdk序列化机制，序列化后的数据保存到redis
+    //1、将数据以json方式保存
+    //1）自己将对象转为json
+    //2）redisTemplate默认序列化规则,改变默认的序列化规则
+    empRedisTemplate.opsForValue().set("com:dennis:test02", employee);
+}
+```
+
+2、测试缓存
+
+原理：
+
+​	1）、引入redis的starter，容器中保存的是RedisCacheManager
+
+​	2）、RedisCacheManager创建RedisCache来作为缓存组件，RedisCache通过操作redis操作缓存
+
+​	3）、默认保存数据k-v都是Object，利用序列化保存，如何保存JSON
+
+- 引入redis的starter，cacheManager变为RedisCacheManager
+- 默认创建的RedisCacheManager操作redis的时候使用的是RedisTemplate<Object, Object>
+- RedisTemplate<Object, Object>是默认使用jdk序列化机制
+
 
 

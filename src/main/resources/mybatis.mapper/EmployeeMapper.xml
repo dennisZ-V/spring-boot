@@ -11,11 +11,26 @@
     </insert>
 
     <update id="updateEmp">
-
+        update employee
+        <set>
+            <if test="lastName!=null and lastName!=''">
+                last_name = #{lastName},
+            </if>
+            <if test="email!=null and email!=''">
+                email = #{email},
+            </if>
+            <if test="gender!=null and gender!=''">
+                gender = #{gender},
+            </if>
+            <if test="dId!=null and dId!=''">
+                d_id = #{dId}
+            </if>
+        </set>
+        where id = #{id};
     </update>
 
     <delete id="deleteEmpById">
-
+        delete from employee where id = #{id}
     </delete>
 
     <select id="getEmpById" resultType="com.zd.springboot.entity.Employee">
