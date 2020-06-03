@@ -1,4 +1,5 @@
-# spring-boot
+spring-boot
+
 ### Day 1
 
 | 功能                       | @ConfigurationProperties | @Value   |
@@ -1316,17 +1317,184 @@ void testRedis() {
 
 步骤：
 
-1. ​	引入依赖
+​	引入依赖
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+```
+
+​	1）、RabbitAutoConfiguration
+
+​	2）、自动配置了连接工厂CachingConnectionFactory
+
+​	3）、RabbitProperties封装了 RabbitMQ的配置
+
+​	4）、RabbitTemplate：给RabbitMQ发送和接收消息
+
+​	5）、AmqpAdmin：RabbitMQ系统管理功能组件
+
+​		——创建和删除Queue、Exchange、Binding
+
+​	6）、@RabbitListener监听消息队列的内容
+
+测试：
+
+```java
+@Test
+void testMq(){
+    //Message需要自己构造，定义消息体内容和消息头
+      rabbitTemplate.send(exchange,routingKey,message);
+    //object默认当成消息体，只需要传入要发送的对象，自动序列化发送给mq
+      rabbitTemplate.convertAndSend(exchange,routingKey,object);
+    Map<String,Object> map = Map.of("msg","这是第一个消息","data", Arrays.asList("helloworld",123,true));
+    //对象被默认序列化以后发送
+    rabbitTemplate.convertAndSend("exchange.direct","dennis.news",employeeMapper.getEmpById((long) 2));
+}
+@Test
+void receive(){
+    //接收数据，如何将数据自动的转为json发送
+    Object o = rabbitTemplate.receiveAndConvert("dennis.news");
+    System.out.println(o.getClass());
+    System.out.println(o);
+}
+@Test
+void sendMsg() {
+    rabbitTemplate.convertAndSend("exchange.fanout", "", employeeMapper.getEmpById((long) 2));
+}
+```
+
+**@EnableRabbit**开启基于注解的RabbitMQ模式
+
+```java
+@RabbitListener(queues = "dennis.news")
+public void received(Employee employee){
+    System.out.println(employee);
+}
+@RabbitListener(queues = "dennis")
+public void received02(Message message){
+    System.out.println(message.getBody());
+    System.out.println(message.getMessageProperties());
+}
+```
+
+```java
+@Test
+public void createExchange(){
+      amqpAdmin.declareExchange(new DirectExchange("amqpadmin.exchange"));
+      System.out.println("success");
+      amqpAdmin.declareQueue(new Queue("amqpadmin.queue",true));
+    //创建绑定规则
+      amqpAdmin.declareBinding(new Binding("amqpadmin.queue", Binding.DestinationType.QUEUE,"amqpadmin.exchange","amqp.dennis",null));
+}
+```
+
+### DAY 7
+
+#### 一、Spring Boot与任务
+
+1、异步任务
+
+**@EnableAsync**：开启异步注解
+
+```java
+//告诉spring这是一个异步方法
+@Async
+public void hello(){
+    try {
+        Thread.sleep(3000);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+    System.out.println("处理数据中");
+}
+```
+
+2、定时任务
+
+**@EnableScheduling**：开启定时任务注解
+
+```java
+/**
+ *second, minute, hour, day of month, month, and day of week.
+ * 0 * * * * MON-FRI
+ * 3 * * * * *每分钟的第三秒
+ * 0/3 * * * * *每三秒执行一次
+ */
+@Scheduled(cron = "3 * * * * *")
+public void hello(){
+    System.out.println(LocalDateTime.now()+" hello.....");
+}
+```
+
+3、邮件任务
+
+1. 引入依赖
+
+   ```xml
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+   ```
+
+2. 编写配置
+
+   ```yaml
+   spring:
+       mail:
+           username: 1785319835@qq.com
+           password: vxpdbhmottbmcaci
+           host: smtp.qq.com
+           properties:
+             mail:
+               smtp:
+                 starttls.enable: true
+   ```
+
+3. 测试
+
+   ```java
+   @Test
+   void sendMail(){
+       SimpleMailMessage message = new SimpleMailMessage();
+       message.setSubject("Test");
+       message.setText("This is test");
+       message.setTo("372729326@qq.com");
+       message.setFrom("1785319835@qq.com");
+       mailSender.send(message);
+   }
+   ```
+
+   ```java
+   @Test
+   void sendMail02(){
+       //创建复杂的消息邮件
+       MimeMessage mimeMessage = mailSender.createMimeMessage();
+       try {
+           MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+           helper.setSubject("Test");
+           helper.setText("This is test<br/>Let's learn <font color='red'>spring-boot</font>",true);
+           helper.setTo("372729326@qq.com");
+           helper.setFrom("1785319835@qq.com");
+           helper.addAttachment("TimeDoctor.png",new File("C:\\Users\\Administrator\\Desktop\\TimeDoctor.png"));
+           mailSender.send(mimeMessage);
+       } catch (MessagingException e) {
+           e.printStackTrace();
+       }
+   }
+   ```
+
+#### 二、SpringBoot与安全
+
+1. 引入依赖
 
    ```xml
    <dependency>
        <groupId>org.springframework.boot</groupId>
-       <artifactId>spring-boot-starter-amqp</artifactId>
+       <artifactId>spring-boot-starter-security</artifactId>
    </dependency>
    ```
 
-   - RabbitAutoConfiguration
-   - 自动配置了连接工厂CachingConnectionFactory
-   - RabbitProperties封装了 RabbitMQ的配置
-   - RabbitTemplate：给RabbitMQ发送和接收消息
-   - AmqpAdmin：RabbitMQ系统管理功能组件
