@@ -52,7 +52,6 @@ spring:
     password: guest
   mail:
     username: 1785319835@qq.com
-    password: vxpdbhmottbmcaci
     host: smtp.qq.com
     properties:
       mail:
